@@ -178,7 +178,11 @@ func dbSlowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, map[string]string{"status": "ok", "service": "go", "http_port": "8084", "grpc_port": "9084"})
+	result := make(map[string]interface{})
+	for k, v := range map[string]string{"status": "ok", "service": "go", "http_port": "8084", "grpc_port": "9084"} {
+		result[k] = v
+	}
+	writeJSON(w, result)
 }
 
 func main() {
