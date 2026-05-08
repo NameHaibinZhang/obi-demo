@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.Json;
 using Grpc.Core;
 using ObiDemo;
 using MongoDB.Driver;
@@ -71,7 +72,7 @@ public class DemoServiceImpl : DemoService.DemoServiceBase
         }
         catch { }
 
-        var result = new Dictionary<string, object>
+        var result = new Dictionary<string, object?>
         {
             ["service"] = "dotnet",
             ["mongodb"] = customers.Select(c => c.ToDictionary()).ToList(),
@@ -88,7 +89,7 @@ public class DemoServiceImpl : DemoService.DemoServiceBase
         };
     }
 
-    public override async Task<DataResponse> GetDataError(DataRequest request, ServerCallContext context)
+    public override Task<DataResponse> GetDataError(DataRequest request, ServerCallContext context)
     {
         throw new RpcException(new Status(StatusCode.Internal, "deliberate gRPC error from .NET for OBI demo"));
     }
