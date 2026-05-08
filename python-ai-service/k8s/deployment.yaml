@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-ai-service-config
+  namespace: obi-demo
+data:
+  OPENAI_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  OPENAI_MODEL: "qwen-plus"
+  AI_SERVICE_PORT: "8087"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-ai-service
+  namespace: obi-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-ai-service
+  template:
+    metadata:
+      labels:
+        app: python-ai-service
+    spec:
+      containers:
+      - name: python-ai-service
+        image: obi-demo/python-ai-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8087
+        envFrom:
+        - configMapRef:
+            name: python-ai-service-config
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-api-key
+              key: api-key
+              optional: true
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-ai-service
+  namespace: obi-demo
+spec:
+  selector:
+    app: python-ai-service
+  ports:
+  - port: 8087
+    targetPort: 8087

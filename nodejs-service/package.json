@@ -1,0 +1,13 @@
+{
+  "name": "obi-demo-nodejs",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": { "start": "node app.js" },
+  "dependencies": {
+    "express": "^4.21.0",
+    "redis": "^4.7.0",
+    "mongodb": "^6.9.0",
+    "@grpc/grpc-js": "^1.12.0",
+    "@grpc/proto-loader": "^0.4.0"
+  }
+}

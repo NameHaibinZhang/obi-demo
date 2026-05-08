@@ -1,0 +1,180 @@
+networks:
+  obi-demo-net:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: demo123
+      MYSQL_DATABASE: obidemo
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./infra/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - obi-demo-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - obi-demo-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./infra/mongo/init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - obi-demo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis-seed:
+    image: redis:7-alpine
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+    entrypoint: >
+      /bin/sh -c "
+      redis-cli -h redis SET cache:user:1 '{\"name\":\"Alice\",\"email\":\"alice@example.com\"}' &&
+      redis-cli -h redis SET cache:user:2 '{\"name\":\"Bob\",\"email\":\"bob@example.com\"}' &&
+      redis-cli -h redis SET cache:user:3 '{\"name\":\"Charlie\",\"email\":\"charlie@example.com\"}' &&
+      redis-cli -h redis SET cache:product:1 '{\"name\":\"Widget\",\"price\":9.99}' &&
+      redis-cli -h redis SET cache:product:2 '{\"name\":\"Gadget\",\"price\":19.99}' &&
+      echo 'Redis seeded successfully'
+      "
+
+  php-app:
+    build: ./php-service
+    ports:
+      - "8083:8083"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: demo123
+      MYSQL_DB: obidemo
+      MONGO_URL: mongodb://mongodb:27017
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+
+  cpp-app:
+    build: ./cpp-service
+    ports:
+      - "8086:8086"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PHP_SERVICE_URL: http://php-app:8083
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+
+  dotnet-app:
+    build: ./dotnet-service
+    ports:
+      - "8085:8085"
+    environment:
+      REDIS_ADDR: redis:6379
+      MONGO_URL: mongodb://mongodb:27017
+      CPP_SERVICE_URL: http://cpp-app:8086
+      GO_HTTP_ADDR: http://go-app:8084
+      NODEJS_HTTP_ADDR: http://nodejs-app:8082
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+
+  go-app:
+    build: ./go-service
+    ports:
+      - "8084:8084"
+      - "9084:9084"
+    environment:
+      MYSQL_DSN: root:demo123@tcp(mysql:3306)/obidemo
+      REDIS_ADDR: redis:6379
+      DOTNET_GRPC_ADDR: dotnet-app:8085
+      DOTNET_HTTP_ADDR: http://dotnet-app:8085
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+
+  nodejs-app:
+    build: ./nodejs-service
+    ports:
+      - "8082:8082"
+    environment:
+      REDIS_URL: redis://redis:6379
+      MONGO_URL: mongodb://mongodb:27017/obidemo
+      NEXT_SERVICE_URL: http://go-app:8084
+      GO_GRPC_ADDR: go-app:9084
+      GO_HTTP_ADDR: http://go-app:8084
+      DOTNET_HTTP_ADDR: http://dotnet-app:8085
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - obi-demo-net
+
+  python-ai-app:
+    build: ./python-ai-service
+    ports:
+      - "8087:8087"
+    environment:
+      OPENAI_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      OPENAI_MODEL: "qwen-plus"
+      AI_SERVICE_PORT: "8087"
+    networks:
+      - obi-demo-net
+
+  python-app:
+    build: ./python-service
+    ports:
+      - "8081:8081"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: demo123
+      MYSQL_DB: obidemo
+      NEXT_SERVICE_URL: http://nodejs-app:8082
+      AI_SERVICE_URL: http://python-ai-app:8087
+      INVALID_HOST: http://nonexistent-service:9999
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - obi-demo-net

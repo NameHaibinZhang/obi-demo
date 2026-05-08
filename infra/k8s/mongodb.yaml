@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-init
+  namespace: obi-demo
+data:
+  init.js: |
+    db = db.getSiblingDB('obidemo');
+
+    db.customers.insertMany([
+        { name: "Alice", email: "alice@example.com", address: "123 Main St", tier: "gold" },
+        { name: "Bob", email: "bob@example.com", address: "456 Oak Ave", tier: "silver" },
+        { name: "Charlie", email: "charlie@example.com", address: "789 Pine Rd", tier: "bronze" },
+        { name: "Diana", email: "diana@example.com", address: "321 Elm Blvd", tier: "gold" },
+        { name: "Eve", email: "eve@example.com", address: "654 Maple Dr", tier: "silver" }
+    ]);
+
+    db.logs.insertMany([
+        { service: "python", level: "info", message: "Service started", timestamp: new Date() },
+        { service: "nodejs", level: "info", message: "Cache initialized", timestamp: new Date() },
+        { service: "go", level: "info", message: "Database connected", timestamp: new Date() },
+        { service: "dotnet", level: "info", message: "gRPC server ready", timestamp: new Date() },
+        { service: "cpp", level: "info", message: "Redis connected", timestamp: new Date() },
+        { service: "php", level: "info", message: "Request processed", timestamp: new Date() }
+    ]);
+
+    db.sessions.insertMany([
+        { sessionId: "sess-001", userId: 1, data: { cart: ["Widget"], preferences: { theme: "dark" } } },
+        { sessionId: "sess-002", userId: 2, data: { cart: ["Gadget", "Doohickey"], preferences: { theme: "light" } } }
+    ]);
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: obi-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: init-js
+          mountPath: /docker-entrypoint-initdb.d
+        - name: mongo-data
+          mountPath: /data/db
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: init-js
+        configMap:
+          name: mongo-init
+      - name: mongo-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: obi-demo
+spec:
+  selector:
+    app: mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017

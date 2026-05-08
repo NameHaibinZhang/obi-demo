@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-seed
+  namespace: obi-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-seed
+  template:
+    metadata:
+      labels:
+        app: redis-seed
+    spec:
+      containers:
+      - name: redis-seed
+        image: redis:7-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          sleep 10
+          redis-cli -h redis SET cache:user:1 '{"name":"Alice","email":"alice@example.com"}'
+          redis-cli -h redis SET cache:user:2 '{"name":"Bob","email":"bob@example.com"}'
+          redis-cli -h redis SET cache:user:3 '{"name":"Charlie","email":"charlie@example.com"}'
+          redis-cli -h redis SET cache:product:1 '{"name":"Widget","price":9.99}'
+          redis-cli -h redis SET cache:product:2 '{"name":"Gadget","price":19.99}'
+          echo 'Redis seeded successfully'
+          sleep infinity

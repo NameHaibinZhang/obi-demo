@@ -1,0 +1,47 @@
+CREATE DATABASE IF NOT EXISTS obidemo;
+USE obidemo;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    age INT
+);
+
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    category VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    total DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO users (name, email, age) VALUES
+('Alice', 'alice@example.com', 28),
+('Bob', 'bob@example.com', 35),
+('Charlie', 'charlie@example.com', 22),
+('Diana', 'diana@example.com', 41),
+('Eve', 'eve@example.com', 19);
+
+INSERT INTO products (name, price, category) VALUES
+('Widget', 9.99, 'tools'),
+('Gadget', 19.99, 'electronics'),
+('Doohickey', 14.50, 'tools'),
+('Thingamajig', 29.99, 'electronics'),
+('Whatchamacallit', 5.99, 'accessories');
+
+INSERT INTO orders (user_id, product_id, quantity, total, status) VALUES
+(1, 1, 2, 19.98, 'completed'),
+(2, 2, 1, 19.99, 'completed'),
+(3, 3, 3, 43.50, 'pending'),
+(4, 4, 1, 29.99, 'shipped'),
+(5, 5, 5, 29.95, 'pending');
