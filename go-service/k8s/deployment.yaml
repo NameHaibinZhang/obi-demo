@@ -6,7 +6,7 @@ metadata:
 data:
   MYSQL_DSN: "root:demo123@tcp(mysql:3306)/obidemo"
   REDIS_ADDR: "redis:6379"
-  DOTNET_GRPC_ADDR: "dotnet-service:8085"
+  DOTNET_GRPC_ADDR: "dotnet-service:9085"
   DOTNET_HTTP_ADDR: "http://dotnet-service:8085"
 ---
 apiVersion: apps/v1

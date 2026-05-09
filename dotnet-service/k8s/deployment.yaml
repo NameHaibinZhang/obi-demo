@@ -31,6 +31,9 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8085
+          name: http
+        - containerPort: 9085
+          name: grpc
         envFrom:
         - configMapRef:
             name: dotnet-service-config
@@ -48,5 +51,9 @@ spec:
   selector:
     app: dotnet-service
   ports:
-  - port: 8085
+  - name: http
+    port: 8085
     targetPort: 8085
+  - name: grpc
+    port: 9085
+    targetPort: 9085

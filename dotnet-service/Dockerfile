@@ -13,7 +13,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=builder /app/publish .
 
-EXPOSE 8085
-ENV ASPNETCORE_URLS=http://+:8085
+EXPOSE 8085 9085
 
 CMD ["dotnet", "obi-demo.dll"]

@@ -121,7 +121,7 @@ services:
     environment:
       MYSQL_DSN: root:demo123@tcp(mysql:3306)/obidemo
       REDIS_ADDR: redis:6379
-      DOTNET_GRPC_ADDR: dotnet-app:8085
+      DOTNET_GRPC_ADDR: dotnet-app:9085
       DOTNET_HTTP_ADDR: http://dotnet-app:8085
     depends_on:
       mysql:
