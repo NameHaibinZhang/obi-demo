@@ -10,6 +10,14 @@
 
 using json = nlohmann::json;
 
+void log_request(const httplib::Request& req) {
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    char buf[64];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&time_t));
+    std::cout << "[" << buf << "] " << req.method << " " << req.path << std::endl;
+}
+
 static std::string REDIS_HOST = std::getenv("REDIS_HOST") ? std::getenv("REDIS_HOST") : "redis";
 static int REDIS_PORT = std::getenv("REDIS_PORT") ? std::atoi(std::getenv("REDIS_PORT")) : 6379;
 static std::string PHP_SERVICE_URL = std::getenv("PHP_SERVICE_URL") ? std::getenv("PHP_SERVICE_URL") : "http://php-service:8083";
@@ -59,7 +67,8 @@ json call_service(const std::string& url, int timeout_ms) {
 int main() {
     httplib::Server svr;
 
-    svr.Get("/api/data", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/data", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         json redis_data = query_redis("cache:user:3");
         json php_data = call_service(PHP_SERVICE_URL, 15000);
         json result;
@@ -69,7 +78,8 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/slow", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/slow", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         std::this_thread::sleep_for(std::chrono::seconds(3));
         json redis_data = query_redis("cache:user:3");
         json result;
@@ -79,12 +89,14 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/error", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/error", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         res.status = 500;
         res.set_content(json{{"service", "cpp"}, {"scenario", "error"}, {"message", "internal server error"}}.dump(), "application/json");
     });
 
-    svr.Get("/api/timeout-downstream", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/timeout-downstream", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         json php_data = call_service(PHP_SERVICE_URL, 100);
         json result;
         result["service"] = "cpp";
@@ -93,7 +105,8 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/notfound-downstream", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/notfound-downstream", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         httplib::Client cli(PHP_SERVICE_URL);
         cli.set_connection_timeout(std::chrono::milliseconds(5000));
         cli.set_read_timeout(std::chrono::milliseconds(5000));
@@ -110,7 +123,8 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/error-downstream", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/error-downstream", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         httplib::Client cli(PHP_SERVICE_URL);
         cli.set_connection_timeout(std::chrono::milliseconds(5000));
         cli.set_read_timeout(std::chrono::milliseconds(5000));
@@ -127,7 +141,8 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/connection-refused", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/connection-refused", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         httplib::Client cli(INVALID_HOST);
         cli.set_connection_timeout(std::chrono::milliseconds(2000));
         cli.set_read_timeout(std::chrono::milliseconds(2000));
@@ -143,14 +158,16 @@ int main() {
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/db-error", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/db-error", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         json result = redis_error();
         result["service"] = "cpp";
         result["scenario"] = "db-error";
         res.set_content(result.dump(), "application/json");
     });
 
-    svr.Get("/api/health", [](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/health", [](const httplib::Request& req, httplib::Response& res) {
+        log_request(req);
         res.set_content(json{{"status", "ok"}, {"service", "cpp"}}.dump(), "application/json");
     });
 

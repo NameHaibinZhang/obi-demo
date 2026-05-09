@@ -1,5 +1,8 @@
 <?php
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$method = $_SERVER['REQUEST_METHOD'];
+$timestamp = date('Y-m-d H:i:s');
+error_log("[$timestamp] $method $path");
 
 $MYSQL_HOST = getenv('MYSQL_HOST') ?: 'mysql';
 $MYSQL_USER = getenv('MYSQL_USER') ?: 'root';
