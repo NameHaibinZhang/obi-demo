@@ -75,7 +75,7 @@ fi
 build_service() {
     local service="$1"
     local image_name="$2"
-    local full_image="${REGISTRY}${image_name}:${TAG}"
+    local full_image="${REGISTRY}${image_name}"
 
     echo ""
     echo "============================================"
