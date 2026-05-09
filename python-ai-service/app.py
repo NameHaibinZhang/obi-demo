@@ -20,9 +20,28 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "gte-rerank-v2")
 RERANK_URL = os.getenv("RERANK_URL", "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank")
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "")
 AI_SERVICE_PORT = int(os.getenv("AI_SERVICE_PORT", "8087"))
+CPP_SERVICE_URL = os.getenv("CPP_SERVICE_URL", "http://cpp-service:8086")
+INVALID_HOST = os.getenv("INVALID_HOST", "http://nonexistent-service:9999")
 
 app = FastAPI()
 mcp_session = None
+
+
+async def call_service(url: str, timeout: float = 15.0):
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=timeout)
+            try:
+                return resp.json(), resp.status_code
+            except Exception:
+                return {"raw": resp.text}, resp.status_code
+    except httpx.TimeoutException:
+        return {"error": "timeout"}, 0
+    except httpx.ConnectError:
+        return {"error": "connection_refused"}, 0
+    except Exception as e:
+        return {"error": str(e)}, 0
 
 
 def new_openai_client() -> AsyncOpenAI:
@@ -335,6 +354,76 @@ async def handle_mcp_call(request: Request):
         return JSONResponse({"result": result})
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/data")
+async def handle_api_data():
+    next_data, next_status = await call_service(f"{CPP_SERVICE_URL}/api/data")
+    return JSONResponse({
+        "service": "python-ai",
+        "next": next_data,
+    })
+
+
+@app.get("/api/slow")
+async def handle_api_slow():
+    await asyncio.sleep(3)
+    next_data, next_status = await call_service(f"{CPP_SERVICE_URL}/api/slow")
+    return JSONResponse({
+        "service": "python-ai",
+        "scenario": "slow",
+        "next": next_data,
+    })
+
+
+@app.get("/api/error")
+async def handle_api_error():
+    return JSONResponse(
+        {"service": "python-ai", "scenario": "error", "message": "internal server error"},
+        status_code=500,
+    )
+
+
+@app.get("/api/timeout-downstream")
+async def handle_api_timeout_downstream():
+    next_data, next_status = await call_service(f"{CPP_SERVICE_URL}/api/data", timeout=0.1)
+    return JSONResponse({
+        "service": "python-ai",
+        "scenario": "timeout-downstream",
+        "next": next_data,
+    })
+
+
+@app.get("/api/notfound-downstream")
+async def handle_api_notfound_downstream():
+    next_data, next_status = await call_service(f"{CPP_SERVICE_URL}/api/nonexistent-path-404")
+    return JSONResponse({
+        "service": "python-ai",
+        "scenario": "notfound-downstream",
+        "status": next_status,
+        "body": next_data,
+    })
+
+
+@app.get("/api/error-downstream")
+async def handle_api_error_downstream():
+    next_data, next_status = await call_service(f"{CPP_SERVICE_URL}/api/error")
+    return JSONResponse({
+        "service": "python-ai",
+        "scenario": "error-downstream",
+        "status": next_status,
+        "body": next_data,
+    })
+
+
+@app.get("/api/connection-refused")
+async def handle_api_connection_refused():
+    next_data, next_status = await call_service(f"{INVALID_HOST}/api/data", timeout=2.0)
+    return JSONResponse({
+        "service": "python-ai",
+        "scenario": "connection-refused",
+        "next": next_data,
+    })
 
 
 @app.get("/health")

@@ -88,7 +88,7 @@ build_service() {
 
     docker build ${PLATFORM_FLAG} ${NO_CACHE} -t "${full_image}" "${PROJECT_DIR}/${service}"
 
-    if [ "$PUSH" = true ] && [ -n "$REGISTRY" ]; then
+    if [ "$PUSH" = true ]; then
         echo "  Pushing: ${full_image}"
         docker push "${full_image}"
     fi

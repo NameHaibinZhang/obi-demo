@@ -158,6 +158,8 @@ services:
       OPENAI_BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
       OPENAI_MODEL: "qwen-plus"
       AI_SERVICE_PORT: "8087"
+      CPP_SERVICE_URL: "http://cpp-app:8086"
+      INVALID_HOST: "http://nonexistent-service:9999"
     networks:
       - obi-demo-net
 
