@@ -1,25 +1,16 @@
 const express = require('express');
 const redis = require('redis');
 const { MongoClient } = require('mongodb');
-const grpc = require('@grpc/grpc-js');
-const protoLoader = require('@grpc/proto-loader');
 
 const app = express();
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://mongodb:27017/obidemo';
 const NEXT_SERVICE_URL = process.env.NEXT_SERVICE_URL || 'http://go-service:8084';
-const GO_GRPC_ADDR = process.env.GO_GRPC_ADDR || 'go-service:9084';
 const GO_HTTP_ADDR = process.env.GO_HTTP_ADDR || 'http://go-service:8084';
 const DOTNET_HTTP_ADDR = process.env.DOTNET_HTTP_ADDR || 'http://dotnet-service:8085';
 const INVALID_HOST = process.env.INVALID_HOST || 'http://nonexistent-service:9999';
 const SLOW_DELAY = parseInt(process.env.SLOW_DELAY || '3') * 1000;
-
-const packageDefinition = protoLoader.loadSync(__dirname + '/proto/demo.proto', {
-    keepCase: true, longs: String, enums: String, defaults: true, oneofs: true
-});
-const obiDemoProto = grpc.loadPackageDefinition(packageDefinition).obidemo;
-const goGrpcClient = new obiDemoProto.DemoService(GO_GRPC_ADDR, grpc.credentials.createInsecure());
 
 async function queryRedis(keys) {
     try {
@@ -43,21 +34,6 @@ async function queryMongoDB(collectionName, query, limit) {
     } catch (e) { return [{ error: e.message }]; }
 }
 
-function callGoGrpc(method = 'GetData', requestId = 'nodejs-request', timeoutMs = 15000) {
-    return new Promise((resolve) => {
-        const deadline = new Date(Date.now() + timeoutMs);
-        const callMethod = method === 'GetDataError' ? 'GetDataError' : 'GetData';
-        goGrpcClient[callMethod]({ request_id: requestId }, { deadline }, (err, response) => {
-            if (err) {
-                resolve({ error: err.message, grpc_code: err.code });
-            } else {
-                try { resolve(JSON.parse(response.data)); }
-                catch { resolve({ data: response.data, source: response.source }); }
-            }
-        });
-    });
-}
-
 async function callServiceHttp(url, timeoutMs = 15000) {
     try {
         const controller = new AbortController();
@@ -75,12 +51,12 @@ async function callServiceHttp(url, timeoutMs = 15000) {
 app.get('/api/data', async (req, res) => {
     const redisData = await queryRedis(['cache:user:1', 'cache:product:1']);
     const mongoData = await queryMongoDB('customers', {}, 5);
-    const nextData = await callGoGrpc('GetData', 'nodejs-data-request');
+    const nextData = await callServiceHttp(`${NEXT_SERVICE_URL}/api/data`, 15000);
     const goHttpInfo = await callServiceHttp(`${GO_HTTP_ADDR}/api/health`, 5000);
     const dotnetHttpInfo = await callServiceHttp(`${DOTNET_HTTP_ADDR}/api/health`, 5000);
     res.json({
         service: 'nodejs', redis: redisData, mongodb: mongoData,
-        next: nextData,
+        next: nextData.data,
         go_http_sidecall: goHttpInfo.data,
         dotnet_http_sidecall: dotnetHttpInfo.data
     });
@@ -94,22 +70,12 @@ app.get('/api/http-chain', async (req, res) => {
 
 app.get('/api/slow', async (req, res) => {
     await new Promise(r => setTimeout(r, SLOW_DELAY));
-    const nextData = await callGoGrpc('GetData', 'nodejs-slow-request');
+    const { data: nextData } = await callServiceHttp(`${NEXT_SERVICE_URL}/api/data`, 15000);
     res.json({ service: 'nodejs', scenario: 'slow', next: nextData });
 });
 
 app.get('/api/error', (req, res) => {
     res.status(500).json({ service: 'nodejs', scenario: 'error', message: 'internal server error' });
-});
-
-app.get('/api/grpc-timeout-downstream', async (req, res) => {
-    const result = await callGoGrpc('GetData', 'timeout-request', 100);
-    res.json({ service: 'nodejs', scenario: 'grpc-timeout-downstream', result });
-});
-
-app.get('/api/grpc-error-downstream', async (req, res) => {
-    const result = await callGoGrpc('GetDataError', 'error-request', 5000);
-    res.json({ service: 'nodejs', scenario: 'grpc-error-downstream', result });
 });
 
 app.get('/api/timeout-downstream', async (req, res) => {

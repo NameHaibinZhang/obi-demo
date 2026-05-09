@@ -1,10 +1,17 @@
 import os
+import sys
 import time
+import json
 import logging
 import threading
 import mysql.connector
 import requests
+import grpc
 from flask import Flask, jsonify
+
+sys.path.append(os.path.join(os.path.dirname(__file__), 'proto'))
+import demo_pb2
+import demo_pb2_grpc
 
 app = Flask(__name__)
 
@@ -14,6 +21,8 @@ MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'demo123')
 MYSQL_DB = os.environ.get('MYSQL_DB', 'obidemo')
 NEXT_SERVICE_URL = os.environ.get('NEXT_SERVICE_URL', 'http://nodejs-service:8082')
 AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://python-ai-service:8087')
+PHP_SERVICE_URL = os.environ.get('PHP_SERVICE_URL', 'http://php-service:8083')
+GO_GRPC_ADDR = os.environ.get('GO_GRPC_ADDR', 'go-service:9084')
 INVALID_HOST = os.environ.get('INVALID_HOST', 'http://nonexistent-service:9999')
 POLL_INTERVAL = int(os.environ.get('POLL_INTERVAL', '10'))
 
@@ -60,15 +69,37 @@ def post_service(url, payload, timeout=15):
         return {"error": str(e)}, 0
 
 
+def call_go_grpc(method='GetData', request_id='python-request', timeout_ms=15000):
+    try:
+        channel = grpc.insecure_channel(GO_GRPC_ADDR)
+        stub = demo_pb2_grpc.DemoServiceStub(channel)
+        request = demo_pb2.DataRequest(request_id=request_id)
+        if method == 'GetDataError':
+            response = stub.GetDataError(request, timeout=timeout_ms / 1000)
+        else:
+            response = stub.GetData(request, timeout=timeout_ms / 1000)
+        channel.close()
+        try:
+            return json.loads(response.data)
+        except (json.JSONDecodeError, ValueError):
+            return {"data": response.data, "source": response.source}
+    except grpc.RpcError as e:
+        return {"error": e.details(), "grpc_code": e.code().value}
+
+
 @app.route('/api/data')
 def get_data():
     users = query_mysql()
     next_data, _ = call_service(f"{NEXT_SERVICE_URL}/api/data")
+    go_grpc_data = call_go_grpc('GetData', 'python-data-request')
+    php_data, _ = call_service(f"{PHP_SERVICE_URL}/api/data")
     ai_health, _ = call_service(f"{AI_SERVICE_URL}/health")
     return jsonify({
         "service": "python",
         "users": users,
+        "go_grpc": go_grpc_data,
         "ai_status": ai_health,
+        "php": php_data,
         "next": next_data,
     })
 
@@ -107,6 +138,36 @@ def ai_rerank():
 def ai_mcp():
     data, status = call_service(f"{AI_SERVICE_URL}/mcp/tools")
     return jsonify({"service": "python", "ai_mcp_tools": data, "status": status})
+
+
+@app.route('/api/php/data')
+def php_data():
+    data, status = call_service(f"{PHP_SERVICE_URL}/api/data")
+    return jsonify({"service": "python", "php": data, "status": status})
+
+
+@app.route('/api/php/slow')
+def php_slow():
+    data, status = call_service(f"{PHP_SERVICE_URL}/api/slow")
+    return jsonify({"service": "python", "scenario": "php-slow", "php": data, "status": status})
+
+
+@app.route('/api/php/error')
+def php_error():
+    data, status = call_service(f"{PHP_SERVICE_URL}/api/error")
+    return jsonify({"service": "python", "scenario": "php-error", "php": data, "status": status})
+
+
+@app.route('/api/php/db-error')
+def php_db_error():
+    data, status = call_service(f"{PHP_SERVICE_URL}/api/db-error")
+    return jsonify({"service": "python", "scenario": "php-db-error", "php": data, "status": status})
+
+
+@app.route('/api/php/db-slow')
+def php_db_slow():
+    data, status = call_service(f"{PHP_SERVICE_URL}/api/db-slow")
+    return jsonify({"service": "python", "scenario": "php-db-slow", "php": data, "status": status})
 
 
 @app.route('/api/slow')
@@ -156,6 +217,18 @@ def db_error():
 def db_slow():
     result = query_mysql("SELECT SLEEP(3), id, name FROM users LIMIT 1")
     return jsonify({"service": "python", "scenario": "db-slow", "result": result})
+
+
+@app.route('/api/grpc-timeout-downstream')
+def grpc_timeout_downstream():
+    result = call_go_grpc('GetData', 'timeout-request', 100)
+    return jsonify({"service": "python", "scenario": "grpc-timeout-downstream", "result": result})
+
+
+@app.route('/api/grpc-error-downstream')
+def grpc_error_downstream():
+    result = call_go_grpc('GetDataError', 'error-request', 5000)
+    return jsonify({"service": "python", "scenario": "grpc-error-downstream", "result": result})
 
 
 @app.route('/api/health')

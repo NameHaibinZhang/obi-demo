@@ -10,6 +10,8 @@ data:
   MYSQL_DB: "obidemo"
   NEXT_SERVICE_URL: "http://nodejs-service:8082"
   AI_SERVICE_URL: "http://python-ai-service:8087"
+  PHP_SERVICE_URL: "http://php-service:8083"
+  GO_GRPC_ADDR: "go-service:9084"
   INVALID_HOST: "http://nonexistent-service:9999"
 ---
 apiVersion: apps/v1

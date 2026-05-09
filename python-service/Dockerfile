@@ -4,6 +4,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY proto/demo.proto proto/demo.proto
+RUN python -m grpc_tools.protoc -Iproto --python_out=proto --grpc_python_out=proto proto/demo.proto
+
 COPY app.py .
 
 EXPOSE 8081

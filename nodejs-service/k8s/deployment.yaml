@@ -7,7 +7,6 @@ data:
   REDIS_URL: "redis://redis:6379"
   MONGO_URL: "mongodb://mongodb:27017/obidemo"
   NEXT_SERVICE_URL: "http://go-service:8084"
-  GO_GRPC_ADDR: "go-service:9084"
   GO_HTTP_ADDR: "http://go-service:8084"
   DOTNET_HTTP_ADDR: "http://dotnet-service:8085"
   INVALID_HOST: "http://nonexistent-service:9999"

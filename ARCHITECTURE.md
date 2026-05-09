@@ -3,7 +3,8 @@
 ## 调用链（主链）
 
 ```
-Python(:8081) → NodeJS(:8082) → Go(:8084) → .NET(:8085/gRPC) → C++(:8086) → PHP(:8083)
+Python(:8081) → NodeJS(:8082) → Go(:8084/HTTP) → .NET(:8085/gRPC) → C++(:8086) → PHP(:8083)
+Python(:8081) → Go(:8084/gRPC)
 ```
 
 ## AI 服务调用链
@@ -71,7 +72,7 @@ Go → .NET(HTTP)          GET /api/health
 | 协议    | 本Demo覆盖情况                                    |
 |---------|----------------------------------------------------|
 | HTTP    | 所有服务之间的调用 + side calls + AI服务调用       |
-| gRPC    | NodeJS → Go, Go → .NET                             |
+| gRPC    | Python → Go, Go → .NET                             |
 | MySQL   | Python, Go, PHP                                    |
 | Redis   | NodeJS, Go, .NET, C++                              |
 | MongoDB | NodeJS, .NET, PHP                                  |

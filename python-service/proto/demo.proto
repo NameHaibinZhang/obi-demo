@@ -2,9 +2,6 @@ syntax = "proto3";
 
 package obidemo;
 
-option go_package = "obi-demo/proto";
-option csharp_namespace = "ObiDemo";
-
 service DemoService {
   rpc GetData (DataRequest) returns (DataResponse);
   rpc GetDataError (DataRequest) returns (DataResponse);

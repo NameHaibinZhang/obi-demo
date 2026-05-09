@@ -139,7 +139,6 @@ services:
       REDIS_URL: redis://redis:6379
       MONGO_URL: mongodb://mongodb:27017/obidemo
       NEXT_SERVICE_URL: http://go-app:8084
-      GO_GRPC_ADDR: go-app:9084
       GO_HTTP_ADDR: http://go-app:8084
       DOTNET_HTTP_ADDR: http://dotnet-app:8085
     depends_on:
@@ -174,6 +173,8 @@ services:
       MYSQL_DB: obidemo
       NEXT_SERVICE_URL: http://nodejs-app:8082
       AI_SERVICE_URL: http://python-ai-app:8087
+      PHP_SERVICE_URL: http://php-app:8083
+      GO_GRPC_ADDR: go-app:9084
       INVALID_HOST: http://nonexistent-service:9999
     depends_on:
       mysql:
