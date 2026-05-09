@@ -16,13 +16,13 @@ SERVICES=(
 )
 
 IMAGE_NAMES=(
-    "obi-demo/python-service"
-    "obi-demo/python-ai-service"
-    "obi-demo/nodejs-service"
-    "obi-demo/go-service"
-    "obi-demo/dotnet-service"
-    "obi-demo/cpp-service"
-    "obi-demo/php-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:python-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:python-ai-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:nodejs-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:go-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:dotnet-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:cpp-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:php-service"
 )
 
 usage() {
@@ -45,7 +45,7 @@ usage() {
     echo ""
     echo "Built images:"
     for i in "${!SERVICES[@]}"; do
-        echo "  ${IMAGE_NAMES[$i]}:${TAG}  ←  ${SERVICES[$i]}/"
+        echo "  ${IMAGE_NAMES[$i]}  ←  ${SERVICES[$i]}/"
     done
 }
 
@@ -128,12 +128,12 @@ echo ""
 if [ -n "$TARGET_SERVICE" ]; then
     for i in "${!SERVICES[@]}"; do
         if [ "${SERVICES[$i]}" = "$TARGET_SERVICE" ]; then
-            echo "  ${REGISTRY}${IMAGE_NAMES[$i]}:${TAG}"
+            echo "  ${REGISTRY}${IMAGE_NAMES[$i]}"
         fi
     done
 else
     for i in "${!SERVICES[@]}"; do
-        echo "  ${REGISTRY}${IMAGE_NAMES[$i]}:${TAG}"
+        echo "  ${REGISTRY}${IMAGE_NAMES[$i]}"
     done
 fi
 echo ""

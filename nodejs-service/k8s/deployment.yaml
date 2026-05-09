@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: nodejs-service
-        image: obi-demo/nodejs-service:latest
+        image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:nodejs-service
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8082

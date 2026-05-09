@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: python-service
-        image: obi-demo/python-service:latest
+        image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:python-service
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8081

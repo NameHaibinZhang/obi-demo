@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: php-service
-        image: obi-demo/php-service:latest
+        image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:php-service
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8083
