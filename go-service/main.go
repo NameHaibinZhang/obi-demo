@@ -30,7 +30,7 @@ var (
 func init() {
 	if mysqlDSN == "" { mysqlDSN = "root:demo123@tcp(mysql:3306)/obidemo" }
 	if redisAddr == "" { redisAddr = "redis:6379" }
-	if dotnetAddr == "" { dotnetAddr = "dotnet-service:8085" }
+	if dotnetAddr == "" { dotnetAddr = "dotnet-service:9085" }
 	if dotnetHttpAddr == "" { dotnetHttpAddr = "http://dotnet-service:8085" }
 }
 

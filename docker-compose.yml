@@ -171,12 +171,15 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: demo123
       MYSQL_DB: obidemo
-      NEXT_SERVICE_URL: http://nodejs-app:8082
+      # HTTP 下一跳指向 go-app：Python → HTTP → Go → gRPC → dotnet-app
+      NEXT_SERVICE_URL: http://go-app:8084
       AI_SERVICE_URL: http://python-ai-app:8087
       PHP_SERVICE_URL: http://php-app:8083
       INVALID_HOST: http://nonexistent-service:9999
     depends_on:
       mysql:
         condition: service_healthy
+      go-app:
+        condition: service_started
     networks:
       - obi-demo-net
