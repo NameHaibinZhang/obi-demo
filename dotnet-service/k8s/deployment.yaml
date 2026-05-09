@@ -28,7 +28,7 @@ spec:
       containers:
       - name: dotnet-service
         image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:dotnet-service
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8085
         envFrom:

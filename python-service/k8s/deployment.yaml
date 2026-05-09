@@ -30,7 +30,7 @@ spec:
       containers:
       - name: python-service
         image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:python-service
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8081
         envFrom:

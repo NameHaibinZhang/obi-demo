@@ -27,7 +27,7 @@ spec:
       containers:
       - name: go-service
         image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:go-service
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8084
           name: http

@@ -27,7 +27,7 @@ spec:
       containers:
       - name: cpp-service
         image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:cpp-service
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8086
         envFrom:

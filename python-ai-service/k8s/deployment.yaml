@@ -26,7 +26,7 @@ spec:
       containers:
       - name: python-ai-service
         image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:python-ai-service
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8087
         envFrom:
