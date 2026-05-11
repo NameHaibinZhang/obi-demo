@@ -279,6 +279,14 @@ AI_POLL_MESSAGES = [
 ]
 
 
+RUST_POLL_ENDPOINTS = [
+    "/api/data",
+    "/api/health",
+    "/api/retry-storm",
+    "/api/cpu-intensive",
+]
+
+
 def background_poll():
     time.sleep(8)
     idx = 0
@@ -288,6 +296,13 @@ def background_poll():
             log.info("poll nodejs: status=%s body_len=%d", resp.status_code, len(resp.text))
         except Exception as e:
             log.warning("poll nodejs failed: %s", e)
+
+        try:
+            rust_ep = RUST_POLL_ENDPOINTS[idx % len(RUST_POLL_ENDPOINTS)]
+            resp = requests.get(f"{RUST_SERVICE_URL}{rust_ep}", timeout=30)
+            log.info("poll rust %s: status=%s body_len=%d", rust_ep, resp.status_code, len(resp.text))
+        except Exception as e:
+            log.warning("poll rust failed: %s", e)
 
         try:
             msg = AI_POLL_MESSAGES[idx % len(AI_POLL_MESSAGES)]
