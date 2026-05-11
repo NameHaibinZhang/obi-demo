@@ -149,6 +149,19 @@ services:
     networks:
       - obi-demo-net
 
+  rust-app:
+    build: ./rust-service
+    ports:
+      - "8088:8088"
+    environment:
+      NODEJS_SERVICE_URL: http://nodejs-app:8082
+      INVALID_HOST: http://nonexistent-service:9999
+    depends_on:
+      nodejs-app:
+        condition: service_started
+    networks:
+      - obi-demo-net
+
   python-ai-app:
     build: ./python-ai-service
     ports:
@@ -175,11 +188,14 @@ services:
       NEXT_SERVICE_URL: http://go-app:8084
       AI_SERVICE_URL: http://python-ai-app:8087
       PHP_SERVICE_URL: http://php-app:8083
+      RUST_SERVICE_URL: http://rust-app:8088
       INVALID_HOST: http://nonexistent-service:9999
     depends_on:
       mysql:
         condition: service_healthy
       go-app:
+        condition: service_started
+      rust-app:
         condition: service_started
     networks:
       - obi-demo-net

@@ -11,6 +11,7 @@ data:
   NEXT_SERVICE_URL: "http://go-service:8084"
   AI_SERVICE_URL: "http://python-ai-service:8087"
   PHP_SERVICE_URL: "http://php-service:8083"
+  RUST_SERVICE_URL: "http://rust-service:8088"
   INVALID_HOST: "http://nonexistent-service:9999"
 ---
 apiVersion: apps/v1

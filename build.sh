@@ -13,6 +13,7 @@ SERVICES=(
     "dotnet-service"
     "cpp-service"
     "php-service"
+    "rust-service"
 )
 
 IMAGE_NAMES=(
@@ -23,6 +24,7 @@ IMAGE_NAMES=(
     "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:dotnet-service"
     "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:cpp-service"
     "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:php-service"
+    "registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:rust-service"
 )
 
 usage() {

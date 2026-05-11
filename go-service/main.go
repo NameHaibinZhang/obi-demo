@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -177,6 +178,24 @@ func dbSlowHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]interface{}{"service": "go", "scenario": "db-slow", "result": result})
 }
 
+func nPlusOneHandler(w http.ResponseWriter, r *http.Request) {
+	products := queryMySQL("SELECT id, name, price, category FROM products LIMIT 10")
+	var details []map[string]interface{}
+	for _, p := range products {
+		id, ok := p["id"].(int)
+		if !ok { continue }
+		row := queryMySQL(fmt.Sprintf("SELECT id, name, price, category FROM products WHERE id = %d", id))
+		redisData := queryRedis(fmt.Sprintf("cache:product:%d", id))
+		details = append(details, map[string]interface{}{"product": row, "cache": redisData})
+	}
+	writeJSON(w, map[string]interface{}{
+		"service": "go", "scenario": "n-plus-one",
+		"message": "fetched product list then queried each one individually",
+		"total_queries": len(details) + 1,
+		"details": details,
+	})
+}
+
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	result := make(map[string]interface{})
 	for k, v := range map[string]string{"status": "ok", "service": "go", "http_port": "8084", "grpc_port": "9084"} {
@@ -204,6 +223,7 @@ func main() {
 	http.HandleFunc("/api/grpc-error", grpcErrorHandler)
 	http.HandleFunc("/api/db-error", dbErrorHandler)
 	http.HandleFunc("/api/db-slow", dbSlowHandler)
+	http.HandleFunc("/api/n-plus-one", nPlusOneHandler)
 	http.HandleFunc("/api/health", healthHandler)
 
 	log.Println("Go HTTP server starting on :8084")

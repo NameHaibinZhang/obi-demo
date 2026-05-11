@@ -3,6 +3,7 @@ import time
 import json
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import mysql.connector
 import requests
 from flask import Flask, jsonify
@@ -16,6 +17,7 @@ MYSQL_DB = os.environ.get('MYSQL_DB', 'obidemo')
 NEXT_SERVICE_URL = os.environ.get('NEXT_SERVICE_URL', 'http://nodejs-service:8082')
 AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'http://python-ai-service:8087')
 PHP_SERVICE_URL = os.environ.get('PHP_SERVICE_URL', 'http://php-service:8083')
+RUST_SERVICE_URL = os.environ.get('RUST_SERVICE_URL', 'http://rust-service:8088')
 INVALID_HOST = os.environ.get('INVALID_HOST', 'http://nonexistent-service:9999')
 POLL_INTERVAL = int(os.environ.get('POLL_INTERVAL', '10'))
 
@@ -68,11 +70,13 @@ def get_data():
     next_data, _ = call_service(f"{NEXT_SERVICE_URL}/api/data")
     php_data, _ = call_service(f"{PHP_SERVICE_URL}/api/data")
     ai_health, _ = call_service(f"{AI_SERVICE_URL}/health")
+    rust_data, _ = call_service(f"{RUST_SERVICE_URL}/api/data")
     return jsonify({
         "service": "python",
         "users": users,
         "ai_status": ai_health,
         "php": php_data,
+        "rust": rust_data,
         "next": next_data,
     })
 
@@ -141,6 +145,72 @@ def php_db_error():
 def php_db_slow():
     data, status = call_service(f"{PHP_SERVICE_URL}/api/db-slow")
     return jsonify({"service": "python", "scenario": "php-db-slow", "php": data, "status": status})
+
+
+@app.route('/api/rust/data')
+def rust_data():
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/data")
+    return jsonify({"service": "python", "rust": data, "status": status})
+
+
+@app.route('/api/rust/slow')
+def rust_slow():
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/slow")
+    return jsonify({"service": "python", "scenario": "rust-slow", "rust": data, "status": status})
+
+
+@app.route('/api/rust/error')
+def rust_error():
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/error")
+    return jsonify({"service": "python", "scenario": "rust-error", "rust": data, "status": status})
+
+
+@app.route('/api/fan-out')
+def fan_out():
+    """并发扇出: 一个请求同时触发多个下游并行调用"""
+    targets = [
+        (f"{NEXT_SERVICE_URL}/api/health", "go"),
+        (f"{PHP_SERVICE_URL}/api/health", "php"),
+        (f"{RUST_SERVICE_URL}/api/health", "rust"),
+        (f"{AI_SERVICE_URL}/health", "ai"),
+    ]
+    results = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(call_service, url): name for url, name in targets}
+        for future in as_completed(futures):
+            name = futures[future]
+            data, status = future.result()
+            results[name] = {"data": data, "status": status}
+    return jsonify({"service": "python", "scenario": "fan-out", "results": results})
+
+
+@app.route('/api/cascade-failure')
+def cascade_failure():
+    """级联失败: python(15s timeout) → rust(/api/cascade, 8s timeout) → nodejs(/api/slow, 3s sleep)
+    展示超时如何从最深层逐级传播"""
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/cascade", timeout=15)
+    return jsonify({"service": "python", "scenario": "cascade-failure", "rust": data, "status": status})
+
+
+@app.route('/api/retry-storm')
+def retry_storm():
+    """重试风暴入口: 调用 rust 服务的重试端点，展示请求放大效应"""
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/retry-storm")
+    return jsonify({"service": "python", "scenario": "retry-storm", "rust": data, "status": status})
+
+
+@app.route('/api/n-plus-one')
+def n_plus_one():
+    """N+1 查询: 调用 go 服务的 N+1 端点，展示循环查询问题"""
+    data, status = call_service(f"{NEXT_SERVICE_URL}/api/n-plus-one")
+    return jsonify({"service": "python", "scenario": "n-plus-one", "go": data, "status": status})
+
+
+@app.route('/api/cpu-intensive')
+def cpu_intensive():
+    """CPU 密集: 调用 rust 服务的 CPU 密集端点"""
+    data, status = call_service(f"{RUST_SERVICE_URL}/api/cpu-intensive", timeout=30)
+    return jsonify({"service": "python", "scenario": "cpu-intensive", "rust": data, "status": status})
 
 
 @app.route('/api/slow')

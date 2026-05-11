@@ -27,6 +27,7 @@ kubectl apply -f cpp-service/k8s/deployment.yaml
 kubectl apply -f dotnet-service/k8s/deployment.yaml
 kubectl apply -f go-service/k8s/deployment.yaml
 kubectl apply -f nodejs-service/k8s/deployment.yaml
+kubectl apply -f rust-service/k8s/deployment.yaml
 kubectl apply -f python-ai-service/k8s/deployment.yaml
 kubectl apply -f python-service/k8s/deployment.yaml
 
@@ -36,6 +37,7 @@ kubectl wait --for=condition=available --timeout=120s deployment/cpp-service -n 
 kubectl wait --for=condition=available --timeout=120s deployment/dotnet-service -n $NS || true
 kubectl wait --for=condition=available --timeout=120s deployment/go-service -n $NS || true
 kubectl wait --for=condition=available --timeout=120s deployment/nodejs-service -n $NS || true
+kubectl wait --for=condition=available --timeout=120s deployment/rust-service -n $NS || true
 kubectl wait --for=condition=available --timeout=120s deployment/python-ai-service -n $NS || true
 kubectl wait --for=condition=available --timeout=120s deployment/python-service -n $NS || true
 
