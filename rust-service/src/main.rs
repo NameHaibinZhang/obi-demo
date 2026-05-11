@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer, HttpResponse};
+use actix_web::{web, App, HttpServer, HttpResponse, middleware};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -213,10 +213,12 @@ async fn main() -> std::io::Result<()> {
         invalid_host,
     };
 
-    println!("Rust service running on port 8088");
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    log::info!("Rust service running on port 8088");
 
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::Logger::new("%a \"%r\" %s %b %Dms"))
             .app_data(web::Data::new(state.clone()))
             .route("/api/data", web::get().to(get_data))
             .route("/api/health", web::get().to(health))
