@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: redis-seed
-        image: redis:7-alpine
+        image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:redis7
         command:
         - /bin/sh
         - -c

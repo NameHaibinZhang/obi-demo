@@ -4,7 +4,7 @@ networks:
 
 services:
   mysql:
-    image: mysql:8.0
+    image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:mysql8
     environment:
       MYSQL_ROOT_PASSWORD: demo123
       MYSQL_DATABASE: obidemo
@@ -21,7 +21,7 @@ services:
       retries: 30
 
   redis:
-    image: redis:7-alpine
+    image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:redis7
     ports:
       - "6379:6379"
     networks:
@@ -33,7 +33,7 @@ services:
       retries: 30
 
   mongodb:
-    image: mongo:7
+    image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:mongo7
     ports:
       - "27017:27017"
     volumes:
@@ -47,7 +47,7 @@ services:
       retries: 30
 
   redis-seed:
-    image: redis:7-alpine
+    image: registry.cn-hangzhou.aliyuncs.com/private-mesh/obi:redis7
     depends_on:
       redis:
         condition: service_healthy
